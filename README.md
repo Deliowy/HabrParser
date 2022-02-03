@@ -4,11 +4,11 @@
 
 # Dependencies
 
-1. BeautifulSoup
-2. Pandas
-3. Matplotlib
-4. Requests
-5. WordCloud
+1. BeautifulSoup    4.10.0
+2. Pandas           1.3.5
+3. Matplotlib       3.5.1
+4. Requests         2.26.0
+5. WordCloud        1.8.1
 
 ---
 
