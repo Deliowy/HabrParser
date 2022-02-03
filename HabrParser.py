@@ -404,9 +404,31 @@ def get_all_articles(url: str):
             )
             articles.extend(page_articles)
 
-    articles = filter_articles_from_metaposts(articles)
-
     return articles
+
+
+def filter_engaging_articles(articles: list, min_engage_coef: float):
+    """Убрать из списка статьи с недостаточным коэффициентом вовлекаемости
+
+    Parameters
+    :param  articles - Список статей
+    :type   articles: list
+
+    :param  min_engage_coef - Порог отбора статей по коэффициенту вовлекаемости
+    :type   min_engage_coef: float
+
+    Returns
+    :return filtered_articles - Отфильтрованный список статей
+    :type   filtered_articles: list
+    """
+
+    filtered_articles = []
+
+    for article in articles:
+        #TODO
+        pass
+
+    return filtered_articles
 
 
 def filter_articles_from_metaposts(articles: list):
@@ -417,7 +439,7 @@ def filter_articles_from_metaposts(articles: list):
     :type   articles: list
 
     Returns
-    :return filtered_articles - Список статей
+    :return filtered_articles - Отфильтрованный список статей
     :type   filtered_articles: list
     """
     filtered_articles = []
@@ -457,6 +479,26 @@ def filter_articles_by_months(articles: list, months: int):
 
     return filtered_articles
 
+def filter_articles_wrapper(articles: list, months: int):
+    """Оберточная функция для фильтрации статей по нескольким параметрам
+    
+    Parameters
+    :param  articles - Список статей
+    :type   articles: list
+
+    :param  months - За сколько последних месяцев фильтровать статьи
+    :type   months: int
+
+    Returns
+    :return filtered_articles - Отфильтрованный список статей
+    :type   filtered_articles: list
+    """
+
+    filtered_articles = filter_articles_by_months(articles, months)
+    filtered_articles = filter_articles_from_metaposts(filtered_articles)
+    filtered_articles = filter_engaging_articles(filtered_articles)
+
+    return filtered_articles
 
 def scrape_flow(flow_folder: str, url: str, months: int = 1):
     """Спарсить все статьи раздела за указанное число месяцев
@@ -478,7 +520,8 @@ def scrape_flow(flow_folder: str, url: str, months: int = 1):
     makedir(flow_folder)
 
     articles = get_all_articles(url)
-    articles = filter_articles_by_months(articles, months)
+
+    articles = filter_articles_wrapper(articles, months)
 
     articles_info = []
     articles_threads = []
