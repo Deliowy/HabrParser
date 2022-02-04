@@ -4,11 +4,11 @@
 
 # Dependencies
 
-1. BeautifulSoup
-2. Pandas
-3. Matplotlib
-4. Requests
-5. WordCloud
+1. BeautifulSoup    4.10.0
+2. Pandas           1.3.5
+3. Matplotlib       3.5.1
+4. Requests         2.26.0
+5. WordCloud        1.8.1
 
 ---
 
@@ -24,7 +24,9 @@ Used for collecting info about articles of main thematics from a given time peri
 5. Marketing
 6. PopSci
 
-During execution interacts with device file system to create new directories and .csv-files
+During execution interacts with device file system to create new directories and files
+
+Due to intense usage of multithreading, programm can cause errors if executed in Jupyter Notebook
 
 # RU
 
@@ -38,4 +40,6 @@ During execution interacts with device file system to create new directories and
 5. Маркетинг
 6. Научпоп
 
-В ходе работы взаимодействует с файловой системой устройства для создания новых директорий и .csv-файлов
+В ходе работы взаимодействует с файловой системой устройства для создания новых директорий и файлов
+
+Из-за активного использования многопоточности, программа может вызвать ошибки при запуске в Jupyter Notebook

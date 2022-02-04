@@ -11,8 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from wordcloud import STOPWORDS, ImageColorGenerator, WordCloud
 
-ENGAGE_COEF_MIN = 0.5
-
+# TODO Wrap all methods inside a class (or several classes)
 
 
 def _init_logger(filename: str, level: str):
@@ -297,6 +296,19 @@ def get_article_comments(article_id: int, flow_folder: str):
             f"При попытке спарсить комментарии к статье по адресу https://habr.com/ru/post/{article_id}/ возникла ошибка {e}"
         )
 
+def get_article_comments_quantity(article: BeautifulSoup):
+    """Получить количество комментариев к статье
+
+    Parameters
+    :param  article - Суп статьи
+    :type   article: bs4.BeautifulSoup
+
+    Returns
+    :return comments_quantity - 
+    :type   comments_quantity: int
+    
+    """
+    pass
 
 def calc_engagement_coef(article_info: dict):
     """Вычислить показатель вовлеченности пользователей
@@ -404,9 +416,37 @@ def get_all_articles(url: str):
             )
             articles.extend(page_articles)
 
-    articles = filter_articles_from_metaposts(articles)
-
     return articles
+
+
+def filter_engaging_articles(articles: list, min_engage_coef: float):
+    """Убрать из списка статьи с недостаточным коэффициентом вовлекаемости
+
+    Parameters
+    :param  articles - Список статей
+    :type   articles: list
+
+    :param  min_engage_coef - Порог отбора статей по коэффициенту вовлекаемости
+    :type   min_engage_coef: float
+
+    Returns
+    :return filtered_articles - Отфильтрованный список статей
+    :type   filtered_articles: list
+    """
+
+    filtered_articles = []
+
+    for article in articles:
+        # TODO
+        article_info = {
+            "Views": get_article_views(article),
+            "Total_votes": get_article_votes(article),
+            "Bookmarks": get_article_bookmarks(article),
+            "Comments_Quantity": get_article_comments_quantity(article),
+        }
+        pass
+
+    return filtered_articles
 
 
 def filter_articles_from_metaposts(articles: list):
@@ -417,7 +457,7 @@ def filter_articles_from_metaposts(articles: list):
     :type   articles: list
 
     Returns
-    :return filtered_articles - Список статей
+    :return filtered_articles - Отфильтрованный список статей
     :type   filtered_articles: list
     """
     filtered_articles = []
@@ -458,7 +498,34 @@ def filter_articles_by_months(articles: list, months: int):
     return filtered_articles
 
 
-def scrape_flow(flow_folder: str, url: str, months: int = 1):
+def filter_articles_wrapper(articles: list, months: int, min_engage_coef: float):
+    """Оберточная функция для фильтрации статей по нескольким параметрам
+
+    Parameters
+    :param  articles - Список статей
+    :type   articles: list
+
+    :param  months - За сколько последних месяцев фильтровать статьи
+    :type   months: int
+
+    :param  min_engage_coef - Порог отбора статей по коэффициенту вовлекаемости
+    :type   min_engage_coef: float
+
+    Returns
+    :return filtered_articles - Отфильтрованный список статей
+    :type   filtered_articles: list
+    """
+
+    filtered_articles = filter_articles_by_months(articles, months)
+    filtered_articles = filter_articles_from_metaposts(filtered_articles)
+    filtered_articles = filter_engaging_articles(filtered_articles, min_engage_coef)
+
+    return filtered_articles
+
+
+def scrape_flow(
+    flow_folder: str, url: str, months: int = 1, min_engage_coef: float = 0.5
+):
     """Спарсить все статьи раздела за указанное число месяцев
 
     Parameters
@@ -478,7 +545,8 @@ def scrape_flow(flow_folder: str, url: str, months: int = 1):
     makedir(flow_folder)
 
     articles = get_all_articles(url)
-    articles = filter_articles_by_months(articles, months)
+
+    articles = filter_articles_wrapper(articles, months, min_engage_coef)
 
     articles_info = []
     articles_threads = []
@@ -497,9 +565,7 @@ def scrape_flow(flow_folder: str, url: str, months: int = 1):
 
     flow_df = pd.DataFrame(articles_info).drop_duplicates(subset=["Article_Link"])
 
-    filter_condition = flow_df["Engagement_Coef"] >= ENGAGE_COEF_MIN
-
-    return flow_df[filter_condition]
+    return flow_df
 
 
 def find_most_active_authors(flow_articles: pd.DataFrame, N: int = 10):
@@ -666,7 +732,7 @@ def main():
 
     for key in flows_dict:
         flow_folder = f"{articles_folder}{key}/"
-        flow_df = scrape_flow(flow_folder, flows_dict[key], 3)
+        flow_df = scrape_flow(flow_folder, flows_dict[key], 3, 0.0001)
         _logger.info(f"Парсинг потока '{key}' завершен")
         print("Наиболее активные авторы:")
         print(find_most_active_authors(flow_df, 30))
