@@ -109,7 +109,10 @@ def get_article_views(article_item: BeautifulSoup):
     :type   views: int
     """
     views = article_item.find("span", title="Количество просмотров").find("span").text
-    views = int(float(views[:-1]) * 1000)
+    if views[-1].isalpha():
+        views = int(float(views[:-1]) * 1000)
+    else:
+        views = int(views)
     return views
 
 
@@ -248,9 +251,6 @@ def get_article_comments(article_id: int, flow_folder: str):
     Returns
     :return comments - DataFrame комментариев
     :type   comments: pd.DataFrame
-
-    :return article_comments_quantity - Количество комментариев
-    :type   article_comments_quantity: int
     """
     try:
         _logger.info(
@@ -290,11 +290,12 @@ def get_article_comments(article_id: int, flow_folder: str):
         _logger.info(
             f"Парсинг комментариев к статье по адресу https://habr.com/ru/post/{article_id}/ успешно выполнен"
         )
-        return comments_csv_name, comments.shape[0]
+        return comments_csv_name
     except Exception as e:
         _logger.warning(
             f"При попытке спарсить комментарии к статье по адресу https://habr.com/ru/post/{article_id}/ возникла ошибка {e}"
         )
+
 
 def get_article_comments_quantity(article: BeautifulSoup):
     """Получить количество комментариев к статье
@@ -304,11 +305,16 @@ def get_article_comments_quantity(article: BeautifulSoup):
     :type   article: bs4.BeautifulSoup
 
     Returns
-    :return comments_quantity - 
+    :return comments_quantity -
     :type   comments_quantity: int
-    
     """
-    pass
+
+    comments_div = article.find("div", class_="tm-article-comments-counter-link")
+    comments_quantity = int(
+        comments_div.find("span", class_="tm-article-comments-counter-link__value").text
+    )
+    return comments_quantity
+
 
 def calc_engagement_coef(article_info: dict):
     """Вычислить показатель вовлеченности пользователей
@@ -357,9 +363,8 @@ def scrape_article(article: BeautifulSoup, articles_info: list, flow_folder: str
         article_page_soup
     )
     article_bookmarks = get_article_bookmarks(article_page_soup)
-    article_comments_csv_name, article_comments_quantity = get_article_comments(
-        article_id, flow_folder
-    )
+    article_comments_quantity = get_article_comments_quantity(article)
+    article_comments_csv_name = get_article_comments(article_id, flow_folder)
 
     article_info = {
         "Article_Title": article_title,
@@ -437,14 +442,14 @@ def filter_engaging_articles(articles: list, min_engage_coef: float):
     filtered_articles = []
 
     for article in articles:
-        # TODO
         article_info = {
             "Views": get_article_views(article),
             "Total_votes": get_article_votes(article),
             "Bookmarks": get_article_bookmarks(article),
             "Comments_Quantity": get_article_comments_quantity(article),
         }
-        pass
+        if calc_engagement_coef(article_info) > min_engage_coef:
+            filtered_articles.append(article)
 
     return filtered_articles
 
